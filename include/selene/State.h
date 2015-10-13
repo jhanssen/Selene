@@ -21,7 +21,7 @@ private:
     /// Shared code post-calling LoadString or LoadFile
     inline bool PostLoad(int status, const char* file = nullptr) {
         ResetStackOnScopeExit savedStack(_l);
-        std::string filename(file != nullptr ? file : "");
+        const std::string filename(file != nullptr ? file : "");
 #if LUA_VERSION_NUM >= 502
         auto const lua_ok = LUA_OK;
 #else
@@ -46,7 +46,7 @@ private:
         }
 
         const char *msg = lua_tostring(_l, -1);
-        std::string strmsg(msg != nullptr ? msg : (filename.empty() ? "dostring failed" : filename + " : dofile failed"));
+        const std::string strmsg(msg != nullptr ? msg : (filename.empty() ? "dostring failed" : filename + " : dofile failed"));
         _exception_handler->Handle(status, strmsg);
 
         return false;
@@ -94,21 +94,21 @@ public:
     }
 
     bool Load(const char* file) {
-        int status = luaL_loadfile(_l, file);
-        return this->PostLoad(status, file);
+        const int status = luaL_loadfile(_l, file);
+        return PostLoad(status, file);
     }
-    
+
     inline bool Load(const std::string &file) {
-        return this->Load(file.c_str());
+        return Load(file.c_str());
     }
 
     bool LoadStr(const char* script) {
-        int status = luaL_loadstring(_l, script);
-        return this->PostLoad(status);
+        const int status = luaL_loadstring(_l, script);
+        return PostLoad(status);
     }
 
     inline bool LoadStr(const std::string &script) {
-        return this->LoadStr(script.c_str());
+        return LoadStr(script.c_str());
     }
 
     void OpenLib(const std::string& modname, lua_CFunction openf) {
