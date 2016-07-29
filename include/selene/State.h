@@ -41,7 +41,6 @@ private:
 
         status = lua_pcall(_l, 0, LUA_MULTRET, 0);
         if(status == lua_ok) {
-            savedStack.KeepChanges();
             return true;
         }
 
