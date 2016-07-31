@@ -129,6 +129,10 @@ public:
         *_exception_handler = ExceptionHandler(std::move(handler));
     }
 
+    ExceptionHandler* GetExceptionHandler() {
+        return _exception_handler.get();
+    }
+
 public:
     Selector operator[](const char *name) {
         return Selector(_l, *_registry, *_exception_handler, name);

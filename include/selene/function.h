@@ -5,6 +5,7 @@
 #include "primitives.h"
 #include "references.h"
 #include "ResourceHandler.h"
+#include "HandlerScope.h"
 #include <tuple>
 #include "util.h"
 
@@ -27,11 +28,22 @@ struct function_base {
 
     void protected_call(int const num_args, int const num_ret,
                         int const handler_index) {
+        const bool had = _exception_handler != 0;
+        if (!_exception_handler) {
+            _exception_handler = HandlerList::instance().current();
+        }
         const auto status = lua_pcall(_state, num_args, num_ret, handler_index);
 
         if (status != LUA_OK && _exception_handler) {
             _exception_handler->Handle_top_of_stack(status, _state);
         }
+        if (!had) {
+            _exception_handler = 0;
+        }
+    }
+
+    bool has_handler() const {
+        return _exception_handler != 0;
     }
 
     void Push(lua_State *state) const {
@@ -55,7 +67,7 @@ public:
     R operator()(Args... args) {
         ResetStackOnScopeExit save(_state);
 
-        int handler_index = SetErrorHandler(_state);
+        int handler_index = has_handler() ? SetErrorHandler(_state) : 0;
         _ref.Push(_state);
         detail::_push_n(_state, std::forward<Args>(args)...);
         constexpr int num_args = sizeof...(Args);
@@ -77,7 +89,7 @@ public:
     void operator()(Args... args) {
         ResetStackOnScopeExit save(_state);
 
-        int handler_index = SetErrorHandler(_state);
+        int handler_index = has_handler() ? SetErrorHandler(_state) : 0;
         _ref.Push(_state);
         detail::_push_n(_state, std::forward<Args>(args)...);
         constexpr int num_args = sizeof...(Args);
@@ -98,7 +110,8 @@ public:
     std::tuple<R...> operator()(Args... args) {
         ResetStackOnScopeExit save(_state);
 
-        int handler_index = SetErrorHandler(_state);
+        const bool had_handler = has_handler();
+        int handler_index = had_handler ? SetErrorHandler(_state) : 0;
         _ref.Push(_state);
         detail::_push_n(_state, std::forward<Args>(args)...);
         constexpr int num_args = sizeof...(Args);
@@ -106,7 +119,8 @@ public:
 
         protected_call(num_args, num_ret, handler_index);
 
-        lua_remove(_state, handler_index);
+        if (had_handler)
+            lua_remove(_state, handler_index);
         return detail::_get_n<R...>(_state);
     }
 
