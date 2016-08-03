@@ -264,6 +264,12 @@ public:
         });
     }
 
+    void clear() {
+        _evaluate_store([this]() {
+            lua_pushnil(_state);
+        });
+    }
+
     template <typename T, typename... Funs>
     void SetObj(T &t, Funs... funs) {
         auto fun_tuple = std::make_tuple(std::forward<Funs>(funs)...);
